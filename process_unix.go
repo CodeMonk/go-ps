@@ -19,8 +19,13 @@ type UnixProcess struct {
 	state rune
 	pgrp  int
 	sid   int
+	fds   int
 
 	binary string
+}
+
+func (p *UnixProcess) Fds() int {
+	return p.fds
 }
 
 func (p *UnixProcess) Pid() int {
@@ -57,6 +62,15 @@ func (p *UnixProcess) Refresh() error {
 		&p.ppid,
 		&p.pgrp,
 		&p.sid)
+
+	// Gather the number of files open
+	fdPath := fmt.Sprintf("/proc/%d/fdinfo", p.pid)
+	files, err := ioutil.ReadDir(fdPath)
+	if err == nil {
+		p.fds = len(files)
+	} else {
+		p.fds = -1
+	}
 
 	return err
 }
